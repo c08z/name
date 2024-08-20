@@ -1,0 +1,206 @@
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+local orbitDistance = 7
+local orbitSpeed = 1
+local orbitAngle = 0
+local targetPlayerName = ""
+local isOrbiting = false
+
+local Window = OrionLib:MakeWindow({Name = "Orbit Player", HidePremium = false, SaveConfig = true, ConfigFolder = "OrbitPlayer"})
+
+
+local MainTab = Window:MakeTab({
+    Name = "Orbit",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local function updatePlayerDropdown()
+    local playerNames = {}
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        table.insert(playerNames, otherPlayer.Name)
+    end
+    return playerNames
+end
+
+MainTab:AddDropdown({
+    Name = "Select Player",
+    Default = "",
+    Options = updatePlayerDropdown(),
+    Callback = function(Value)
+        targetPlayerName = Value
+    end    
+})
+
+MainTab:AddTextbox({
+    Name = "Orbit Speed",
+    Default = "1",
+    TextDisappear = true,
+    Callback = function(Value)
+        local newSpeed = tonumber(Value)
+        if newSpeed then
+            orbitSpeed = newSpeed
+        else
+            OrionLib:MakeNotification({
+                Name = "Invalid Number",
+                Content = "Are you sped or sped?",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        end
+    end  
+})
+
+MainTab:AddToggle({
+    Name = "Toggle Orbit",
+    Default = false,
+    Callback = function(Value)
+        isOrbiting = Value
+    end    
+})
+
+local function getPlayerByName(name)
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer.Name == name then
+            return otherPlayer
+        end
+    end
+    return nil
+end
+
+RunService.Heartbeat:Connect(function(deltaTime)
+    if not isOrbiting then return end
+
+    local targetPlayer = getPlayerByName(targetPlayerName)
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
+        
+        -- Update orbit angle
+        orbitAngle = orbitAngle + orbitSpeed * deltaTime
+        
+        -- Calculate new position
+        local offset = Vector3.new(
+            math.cos(orbitAngle) * orbitDistance,
+            0,
+            math.sin(orbitAngle) * orbitDistance
+        )
+        
+        -- Set new position and orientation
+        humanoidRootPart.CFrame = CFrame.new(targetPosition + offset) * CFrame.Angles(0, orbitAngle + math.pi/2, 0)
+    end
+end)
+
+Players.PlayerAdded:Connect(function()
+    OrbitTab:UpdateDropdown({
+        Name = "Select Player",
+        Options = updatePlayerDropdown()
+    })
+end)
+
+Players.PlayerRemoving:Connect(function()
+    OrbitTab:UpdateDropdown({
+        Name = "Select Player",
+        Options = updatePlayerDropdown()
+    })
+end)
+ 
+local Tab = Window:MakeTab({
+  Name = "Main",
+  Icon = "rbxassetid://4483345998",
+  PremiumOnly = false
+})
+ 
+local Section = Tab:AddSection({
+  Name = "Script"
+})
+ 
+Tab:AddButton({
+  Name = "Expand Non-Player Hitbox",
+  Callback = function()
+    local function expandNonPlayerHitbox()
+      local localPlayer = game.Players.LocalPlayer
+ 
+      for _, npc in ipairs(game.Workspace:GetDescendants()) do
+        pcall(function()
+          if npc:IsA("Model") and npc:FindFirstChild("Humanoid") and not npc:FindFirstChild("HumanoidRootPart") then
+            local hitbox = npc:FindFirstChild("Humanoid") or npc.PrimaryPart
+            if hitbox then
+              hitbox.Size = Vector3.new(10, 10, 10)
+              hitbox.CanCollide = false
+              hitbox.Transparency = 0.5
+              hitbox.Color = Color3.fromRGB(255, 0, 0)
+            end
+          end
+        end)
+      end
+    end
+ 
+    while true do
+      expandNonPlayerHitbox()
+      wait(1)
+    end
+  end
+})
+ 
+Tab:AddButton({
+  Name = "Expand Player Hitbox (Team Check)",
+  Callback = function()
+    local function expandPlayerHitbox()
+      local localPlayer = game.Players.LocalPlayer
+ 
+      for _, player in ipairs(game.Players:GetPlayers()) do
+        pcall(function()
+          if player ~= localPlayer and player.Team ~= localPlayer.Team and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hitbox = player.Character:FindFirstChild("HumanoidRootPart")
+            if hitbox then
+              hitbox.Size = Vector3.new(10, 10, 10)
+              hitbox.CanCollide = false
+              hitbox.Transparency = 0.5
+              hitbox.Color = Color3.fromRGB(255, 0, 0)
+            end
+          end
+        end)
+      end
+    end
+ 
+    while true do
+      expandPlayerHitbox()
+      wait(1)
+    end
+  end
+})
+ 
+Tab:AddButton({
+  Name = "Expand All Player Hitboxes",
+  Callback = function()
+    local function expandAllPlayerHitboxes()
+      local localPlayer = game.Players.LocalPlayer
+ 
+      for _, player in ipairs(game.Players:GetPlayers()) do
+        pcall(function()
+          if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hitbox = player.Character:FindFirstChild("HumanoidRootPart")
+            if hitbox then
+              hitbox.Size = Vector3.new(10, 10, 10)
+              hitbox.CanCollide = false
+              hitbox.Transparency = 0.5
+              hitbox.Color = Color3.fromRGB(255, 0, 0)
+            end
+          end
+        end)
+      end
+    end
+ 
+    while true do
+      expandAllPlayerHitboxes()
+      wait(1)
+    end
+  end
+})
+ 
